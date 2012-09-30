@@ -54,11 +54,12 @@ AudioBytes.prototype.drawWave = function()
 
 AudioBytes.prototype.update = function()
 {
+    /*
     if(this.audioScratchIndex >= this.audioScratch.length || isNaN(this.audioScratch[0]))
     {
         this.audioAnalyzer.getByteTimeDomainData(this.audioScratch);
         this.audioScratchIndex = 0;
-    }
+    }*/
             this.audioAnalyzer.getByteTimeDomainData(this.audioScratch);
 
     this.audioDeque.shift();
