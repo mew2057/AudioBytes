@@ -34,8 +34,15 @@ AudioBytes.prototype.draw = function()
 {
     this.context.fillRect(0,0,this.canvas.width,this.canvas.height);
 
+    this.context.save();
+
+    this.context.globalCompositeOperation = 'darker';
+
+    this.context.fillStyle = '#09f000';
+    this.context.fillRect(this.canvas.width - 50,0,50, this.canvas.height);
     this.drawWave();
 
+    this.context.restore();
 };
 
 AudioBytes.prototype.drawWave = function()
@@ -54,8 +61,7 @@ AudioBytes.prototype.drawWave = function()
 
 AudioBytes.prototype.update = function()
 {
-    /*
-    if(this.audioScratchIndex >= this.audioScratch.length || isNaN(this.audioScratch[0]))
+    /*if(this.audioScratchIndex >= this.audioScratch.length || isNaN(this.audioScratch[0]))
     {
         this.audioAnalyzer.getByteTimeDomainData(this.audioScratch);
         this.audioScratchIndex = 0;
@@ -63,7 +69,7 @@ AudioBytes.prototype.update = function()
             this.audioAnalyzer.getByteTimeDomainData(this.audioScratch);
 
     this.audioDeque.shift();
-    this.audioDeque.push(this.audioScratch[this.audioScratchIndex]);
+    this.audioDeque.push(this.audioScratch[0]);
 };
 
 //Philosophically only one gameloop.
@@ -118,7 +124,7 @@ AudioBytes.init = function()
 
     // Sets up the canvas and drawing context details for the game.
     AudioBytes._Game.canvas = document.getElementById("AudioBytesCanvas");
-    AudioBytes._Game.canvas.width = 1024;
+    AudioBytes._Game.canvas.width = 1020;
     AudioBytes._Game.canvas.height = 500;
     AudioBytes.startY = AudioBytes._Game.canvas.height/2;
 
@@ -135,7 +141,7 @@ AudioBytes.init = function()
     $("#AudioBytesCanvas").bind("drop",AudioBytes._Game.drop);
     $("#AudioBytesCanvas").bind("dragenter",AudioBytes._Game.dragEnter);
     $("#AudioBytesCanvas").bind("dragover", AudioBytes._Game.dragOver);
-    
+    alert("Drag an mp3 into the white box.");
     AudioBytes.gameLoop();
 };
 
