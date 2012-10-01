@@ -25,6 +25,8 @@ function AudioBytes()
     this.audioScratch = null;
     this.audioScratchIndex = 0;
     this.audioDeque = null;
+    this.isLoading = false;
+    this.drawFunct = this.drawWave;
 }
 
 AudioBytes._Game = null;
@@ -40,7 +42,8 @@ AudioBytes.prototype.draw = function()
 
     this.context.fillStyle = '#09f000';
     this.context.fillRect(this.canvas.width - 50,0,50, this.canvas.height);
-    this.drawWave();
+    
+    this.drawFunct();
 
     this.context.restore();
 };
@@ -66,8 +69,9 @@ AudioBytes.prototype.update = function()
         this.audioAnalyzer.getByteTimeDomainData(this.audioScratch);
         this.audioScratchIndex = 0;
     }*/
-            this.audioAnalyzer.getByteTimeDomainData(this.audioScratch);
+    this.audioAnalyzer.getByteTimeDomainData(this.audioScratch);
 
+    // Make this dynamic based on the current frequency?
     this.audioDeque.shift();
     this.audioDeque.push(this.audioScratch[0]);
 };
@@ -141,6 +145,7 @@ AudioBytes.init = function()
     $("#AudioBytesCanvas").bind("drop",AudioBytes._Game.drop);
     $("#AudioBytesCanvas").bind("dragenter",AudioBytes._Game.dragEnter);
     $("#AudioBytesCanvas").bind("dragover", AudioBytes._Game.dragOver);
+    
     alert("Drag an mp3 into the white box.");
     AudioBytes.gameLoop();
 };
@@ -172,13 +177,18 @@ AudioBytes.prototype.drop = function(e)
     reader.onload = function(event)
     {      
 //            self.songBuffer = self.audioContext.createBuffer(event.target.result, false );
+        console.log(event.target.result);
+        
+        AudioBytes._Game.audioContext.decodeAudioData(event.target.result, function(buffer) {
+                    console.log(buffer);
 
-    AudioBytes._Game.audioContext.decodeAudioData(event.target.result, function(buffer) {
             AudioBytes._Game.startSong(buffer);
         }, AudioBytes._Game.loadError);
-
+        
         //Add an animation drawer here in the end game, to give the user feedback.
     };
+    AudioBytes._Game.drawFunct = AudioBytes._Game.drawLoad;
+
     reader.readAsArrayBuffer(e.originalEvent.dataTransfer.files[0]);
 };
 
@@ -196,10 +206,26 @@ AudioBytes.prototype.startSong = function(buffer)
     
     this.audioSource.noteOn(0);
     this.audioScratchIndex = this.audioScratch.length;
-
-};
+    AudioBytes._Game.drawFunct = AudioBytes._Game.drawWave;
+    };
 
 AudioBytes.prototype.loadError = function()
 {
     alert("Your song has failed to decode, I am sorry");  
+    this.isLoading = false;
+    AudioBytes._Game.drawFunct = AudioBytes._Game.drawWave;
+
+};
+
+var width = 0;
+AudioBytes.prototype.drawLoad = function()
+{
+    this.context.save();
+    this.context.beginPath();
+
+    this.context.fillStyle = "blue";
+    this.context.fillRect(this.canvas.width/2 - width, this.canvas.height/2, width *2,50); 
+    this.context.fill();
+    width = (width+1);
+    this.context.restore();
 };
