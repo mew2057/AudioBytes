@@ -10,7 +10,7 @@ window.requestAnimFrame = (function(){
           window.oRequestAnimationFrame      || 
           window.msRequestAnimationFrame     || 
           function(/* function */ callback, /* DOMElement */ element){
-            window.setTimeout(callback, 20);
+            window.setTimeout(callback, 100);
           };
 })();
  
@@ -54,9 +54,10 @@ AudioBytes.prototype.drawWave = function()
 
     this.context.moveTo(0,AudioBytes.startY + this.audioDeque[0] - 128);
 
-    for (var cell  = 1, renderPos = 2; cell <  this.audioDeque.length; cell++, renderPos +=4)
+    for (var cell  = 1, renderPos = 2; cell <  this.audioDeque.length; cell++, renderPos +=20)
     {
-        this.context.lineTo(renderPos,AudioBytes.startY + this.audioDeque[cell] - 128);
+        this.context.moveTo(renderPos, AudioBytes.startY + this.audioDeque[cell] - 128);
+        this.context.lineTo(renderPos+ 20,AudioBytes.startY + this.audioDeque[cell] - 128);
     }
     this.context.lineTo(renderPos,AudioBytes.startY);
     this.context.stroke();
@@ -74,6 +75,7 @@ AudioBytes.prototype.update = function()
     // Make this dynamic based on the current frequency?
     this.audioDeque.shift();
     this.audioDeque.push(this.audioScratch[0]);
+    this.audioAnalyzer.getByteFrequencyData(this.audioScratch);
 };
 
 //Philosophically only one gameloop.
@@ -91,6 +93,7 @@ AudioBytes.gameLoop = function()
 AudioBytes.init = function()
 {
     AudioBytes._Game = new AudioBytes();
+    Actor.initFromFile("spriteSheet.json");
     
     try {
         AudioBytes._Game.audioContext = new window.webkitAudioContext();
@@ -104,7 +107,7 @@ AudioBytes.init = function()
         }
         
         AudioBytes._Game.audioScratch = new Uint8Array(
-            1);
+            AudioBytes._Game.audioAnalyzer.frequencyBinCount);
                 
         AudioBytes._Game.audioAnalyzer.getByteTimeDomainData(
             AudioBytes._Game.audioScratch);
@@ -142,11 +145,11 @@ AudioBytes.init = function()
         
 
     
-    $("#AudioBytesCanvas").bind("drop",AudioBytes._Game.drop);
-    $("#AudioBytesCanvas").bind("dragenter",AudioBytes._Game.dragEnter);
-    $("#AudioBytesCanvas").bind("dragover", AudioBytes._Game.dragOver);
+    window.addEventListener("drop",AudioBytes._Game.drop);
+    window.addEventListener("dragenter",AudioBytes._Game.dragEnter);
+    window.addEventListener("dragover", AudioBytes._Game.dragOver);
     
-    alert("Drag an mp3 into the white box.");
+    alert("Drag an mp3 onto the page.");
     AudioBytes.gameLoop();
 };
 
@@ -167,7 +170,7 @@ AudioBytes.prototype.drop = function(e)
     e.stopPropagation();
     e.preventDefault();
 
-    if(e.originalEvent.dataTransfer.files[0].type != "audio/mp3")
+    if(e.dataTransfer.files[0].type != "audio/mp3")
     {
         alert("Invalid file type, only mp3 files are currently supported!");   
         return false;
@@ -175,21 +178,17 @@ AudioBytes.prototype.drop = function(e)
     var reader = new FileReader();
 
     reader.onload = function(event)
-    {      
-//            self.songBuffer = self.audioContext.createBuffer(event.target.result, false );
-        console.log(event.target.result);
-        
+    {     
         AudioBytes._Game.audioContext.decodeAudioData(event.target.result, function(buffer) {
-                    console.log(buffer);
-
             AudioBytes._Game.startSong(buffer);
         }, AudioBytes._Game.loadError);
         
         //Add an animation drawer here in the end game, to give the user feedback.
     };
+    
     AudioBytes._Game.drawFunct = AudioBytes._Game.drawLoad;
-
-    reader.readAsArrayBuffer(e.originalEvent.dataTransfer.files[0]);
+    console.log(e.dataTransfer.files[0]);
+    reader.readAsArrayBuffer(e.dataTransfer.files[0]);
 };
 
 AudioBytes.prototype.startSong = function(buffer)
