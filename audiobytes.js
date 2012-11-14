@@ -27,6 +27,7 @@ function AudioBytes()
     this.audioDeque = null;
     this.isLoading = false;
     this.drawFunct = this.drawWave;
+    this.actor = null;
 }
 
 AudioBytes._Game = null;
@@ -44,7 +45,8 @@ AudioBytes.prototype.draw = function()
     this.context.fillRect(this.canvas.width - 50,0,50, this.canvas.height);
     
     this.drawFunct();
-
+    if(this.actor)
+        this.actor.draw();
     this.context.restore();
 };
 
@@ -54,10 +56,10 @@ AudioBytes.prototype.drawWave = function()
 
     this.context.moveTo(0,AudioBytes.startY + this.audioDeque[0] - 128);
 
-    for (var cell  = 1, renderPos = 2; cell <  this.audioDeque.length; cell++, renderPos +=20)
+    for (var cell  = 1, renderPos = 2; cell <  this.audioDeque.length; cell++, renderPos +=4)
     {
-        this.context.moveTo(renderPos, AudioBytes.startY + this.audioDeque[cell] - 128);
-        this.context.lineTo(renderPos+ 20,AudioBytes.startY + this.audioDeque[cell] - 128);
+      //  this.context.moveTo(renderPos, AudioBytes.startY + this.audioDeque[cell] - 128);
+        this.context.lineTo(renderPos+ 4,AudioBytes.startY + this.audioDeque[cell] - 128);
     }
     this.context.lineTo(renderPos,AudioBytes.startY);
     this.context.stroke();
@@ -76,12 +78,13 @@ AudioBytes.prototype.update = function()
     this.audioDeque.shift();
     this.audioDeque.push(this.audioScratch[0]);
     this.audioAnalyzer.getByteFrequencyData(this.audioScratch);
+    if(this.actor)
+        this.actor.update();
 };
 
 //Philosophically only one gameloop.
 AudioBytes.gameLoop = function()
-{
-    
+{    
     AudioBytes._Game.update();
 
     AudioBytes._Game.draw();
@@ -93,7 +96,6 @@ AudioBytes.gameLoop = function()
 AudioBytes.init = function()
 {
     AudioBytes._Game = new AudioBytes();
-    Actor.initFromFile("spriteSheet.json");
     
     try {
         AudioBytes._Game.audioContext = new window.webkitAudioContext();
@@ -143,6 +145,10 @@ AudioBytes.init = function()
     AudioBytes._Game.context.strokeStyle="blue";
     AudioBytes._Game.context.lineWidth = 2.0;
         
+
+    AudioBytes._Game.actor = Actor.initFromFile("spriteSheet.json",AudioBytes._Game.context);
+    AudioBytes._Game.actor.x = 25;
+    AudioBytes._Game.actor.y = 219;
 
     
     window.addEventListener("drop",AudioBytes._Game.drop);

@@ -1,8 +1,7 @@
 {"frames": [
-
 {
 	"filename": "Step",
-	"frame": {"x":40,"y":2,"w":22,"h":32},
+	"frame": {"x":2,"y":2,"w":22,"h":32},
 	"rotated": false,
 	"trimmed": true,
 	"spriteSourceSize": {"x":5,"y":0,"w":22,"h":32},
@@ -10,23 +9,23 @@
 },
 {
 	"filename": "Run01",
-	"frame": {"x":32,"y":72,"w":28,"h":30},
-	"rotated": true,
+	"frame": {"x":26,"y":2,"w":28,"h":30},
+	"rotated": false,
 	"trimmed": true,
 	"spriteSourceSize": {"x":2,"y":2,"w":28,"h":30},
 	"sourceSize": {"w":32,"h":32}
 },
 {
 	"filename": "Run02",
-	"frame": {"x":2,"y":54,"w":16,"h":32},
-	"rotated": true,
+	"frame": {"x":56,"y":2,"w":16,"h":32},
+	"rotated": false,
 	"trimmed": true,
 	"spriteSourceSize": {"x":8,"y":0,"w":16,"h":32},
 	"sourceSize": {"w":32,"h":32}
 },
 {
 	"filename": "Run03",
-	"frame": {"x":2,"y":72,"w":28,"h":30},
+	"frame": {"x":74,"y":2,"w":28,"h":30},
 	"rotated": false,
 	"trimmed": true,
 	"spriteSourceSize": {"x":2,"y":2,"w":28,"h":30},
@@ -34,15 +33,15 @@
 },
 {
 	"filename": "Jump",
-	"frame": {"x":2,"y":2,"w":24,"h":36},
-	"rotated": true,
+	"frame": {"x":2,"y":36,"w":24,"h":36},
+	"rotated": false,
 	"trimmed": true,
 	"spriteSourceSize": {"x":4,"y":0,"w":24,"h":36},
 	"sourceSize": {"w":32,"h":36}
 },
 {
 	"filename": "Slide",
-	"frame": {"x":2,"y":28,"w":32,"h":24},
+	"frame": {"x":28,"y":36,"w":32,"h":24},
 	"rotated": false,
 	"trimmed": true,
 	"spriteSourceSize": {"x":0,"y":8,"w":32,"h":24},
@@ -50,7 +49,7 @@
 },
 {
 	"filename": "Stand",
-	"frame": {"x":36,"y":36,"w":22,"h":32},
+	"frame": {"x":62,"y":36,"w":22,"h":32},
 	"rotated": false,
 	"trimmed": true,
 	"spriteSourceSize": {"x":5,"y":0,"w":22,"h":32},
@@ -59,7 +58,7 @@
 "animations":[
 {
     "name":"run",
-    "frames": [1,2,3,1]
+    "frames": [3,2,1,2]
 },
 {
     "name":"jump",
@@ -77,9 +76,9 @@
 	"app": "http://www.texturepacker.com",
 	"version": "1.0",
 	"image": "spriteSheet.png",
-	"format": "RGBA8888",
-	"size": {"w":64,"h":104},
+	"format": "RGBA4444",
+	"size": {"w":104,"h":74},
 	"scale": "1",
-	"smartupdate": "$TexturePacker:SmartUpdate:0ff9e70553f12f1d09c678c5e8854450$"
+	"smartupdate": "$TexturePacker:SmartUpdate:3504aaf31d1dad8b49f5dd30804af4d6$"
 }
 }
