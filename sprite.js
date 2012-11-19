@@ -5,12 +5,16 @@ function Sprite()
     this.w = 0;
 }
 
-Actor.DEFAULT_ANIMATE_TIME = 150;
+Actor.DEFAULT_ANIMATE_TIME = 10;
+Actor.DEFAULT_GRAVITY = 10;
+
 
 function Actor()
 {
     this.x = 0;
     this.y = 0;
+    this.velocity = [0,0];
+    this.acceleration = [0,0];
     
     this.spriteSheet = null;
     this.sprites = [];
@@ -20,6 +24,8 @@ function Actor()
     this.currentAnimation = 0;
     this.context = null;
     this.gameContext = null;
+    this.animationCounter = 0;
+    this.animationTime = Actor.DEFAULT_ANIMATE_TIME;
 }
 
 Actor.prototype.draw = function()
@@ -37,20 +43,25 @@ Actor.prototype.draw = function()
 
 Actor.prototype.update = function()
 {
+    // TODO implement a timer for this to be consistent
+    if(++this.animationCounter === this.animationTime)
+        this.animate();
+        
+    
+
+};
+
+Actor.prototype.animate = function()
+{
+    this.currentFrame = (this.currentFrame + 1) % this.animations[this.currentAnimation].frames.length;
     this.currentSprite = this.animations[this.currentAnimation].frames[this.currentFrame];
+    this.animationCounter = 0;
+
 };
 
-Actor.animate = function(self)
+Actor.initFromFile = function(fileName,screen,object)
 {
-    self.currentFrame = (self.currentFrame + 1) % self.animations[self.currentAnimation].frames.length;
-    
-    
-    window.setTimeout(Actor.animate, Actor.DEFAULT_ANIMATE_TIME, self);
-};
-
-Actor.initFromFile = function(fileName,screen)
-{
-    var scratchActor = new Actor();
+    var scratchActor = object ? object : new Actor();
     var spriteData = JSON.parse($.ajax({
         type    : "GET",
         url     : "spriteSheet.json",
@@ -60,6 +71,7 @@ Actor.initFromFile = function(fileName,screen)
     
     scratchActor.animations = spriteData.animations;
     
+
     scratchActor.spriteSheet = new Image();
     scratchActor.spriteSheet.onload = function(imageData)
     {
@@ -69,15 +81,13 @@ Actor.initFromFile = function(fileName,screen)
     
     scratchActor.gameContext = screen;
     
-    //scratchActor.context.drawImage(spriteData.meta.image, 0,0);
-    console.log(scratchActor);
+    scratchActor.animate();
         
     return scratchActor;
 };
 
 Actor.prototype.render = function(image,data)
 {
-  console.log(image, data);
   var tempSprite = null;
    
   
@@ -93,6 +103,56 @@ Actor.prototype.render = function(image,data)
     this.sprites.push(tempSprite);
   }
   
-  window.setTimeout(Actor.animate, Actor.DEFAULT_ANIMATE_TIME, this);
   console.log(this);
+};
+
+Actor.prototype.setAnimation = function(animationName)
+{
+    for(var index in this.animations)
+    {
+        if(this.animations[index].name === animationName)
+            break;
+    }
+    
+    this.currentAnimation = index;
+    
+};
+
+Player.prototype = new Actor();
+function Player()
+{
+    this.queuedInput = [];
+    
+    // Allows me to reuse the actor update code.
+    this.super_update = Actor.prototype.update;
+}
+
+Player.prototype.update =  function()
+{
+    if(this.queuedInput.length > 0)
+        this.handleInput();
+        
+    this.super_update();
+};
+
+Player.initFromFile = function (fileName,screen)
+{
+    var scratchPlayer = new Player();
+    
+    scratchPlayer = Actor.initFromFile(fileName, screen, scratchPlayer);
+    
+    return scratchPlayer;
+};
+
+Player.prototype.handleInput = function()
+{
+    switch(this.queuedInput.pop())
+    {
+        case "jump":
+            if(this.acceleration[1] === 0)
+                this.acceleration[1] = 5;
+            break;
+        default:
+            break;
+    }
 };

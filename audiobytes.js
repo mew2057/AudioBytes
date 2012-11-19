@@ -28,6 +28,7 @@ function AudioBytes()
     this.isLoading = false;
     this.drawFunct = this.drawWave;
     this.actor = null;
+    this.controller = null;
 }
 
 AudioBytes._Game = null;
@@ -52,6 +53,7 @@ AudioBytes.prototype.draw = function()
 
 AudioBytes.prototype.drawWave = function()
 {
+    
     this.context.beginPath();
 
     this.context.moveTo(0,AudioBytes.startY + this.audioDeque[0] - 128);
@@ -72,12 +74,13 @@ AudioBytes.prototype.update = function()
         this.audioAnalyzer.getByteTimeDomainData(this.audioScratch);
         this.audioScratchIndex = 0;
     }*/
+    
     this.audioAnalyzer.getByteTimeDomainData(this.audioScratch);
 
     // Make this dynamic based on the current frequency?
     this.audioDeque.shift();
     this.audioDeque.push(this.audioScratch[0]);
-    this.audioAnalyzer.getByteFrequencyData(this.audioScratch);
+//    this.audioAnalyzer.getByteFrequencyData(this.audioScratch);
     if(this.actor)
         this.actor.update();
 };
@@ -124,7 +127,10 @@ AudioBytes.init = function()
         'browser</canvas>').appendTo('body');
     
     //Removes the focus border.
-    $("#AudioBytesCanvas").css("outline","0");    
+    $("#AudioBytesCanvas").css({
+        "outline":"0",
+        "image-rendering":"-webkit-optimize-contrast"
+    });    
     $("#AudioBytesCanvas").focus();
     
     //Uses FileReader, Audio API,Session Storage
@@ -146,10 +152,12 @@ AudioBytes.init = function()
     AudioBytes._Game.context.lineWidth = 2.0;
         
 
-    AudioBytes._Game.actor = Actor.initFromFile("spriteSheet.json",AudioBytes._Game.context);
+    AudioBytes._Game.actor = Player.initFromFile("spriteSheet.json",AudioBytes._Game.context);
     AudioBytes._Game.actor.x = 25;
     AudioBytes._Game.actor.y = 219;
-
+    
+    AudioBytes._Game.controller = new Controller();
+    AudioBytes._Game.controller.init(AudioBytes._Game.actor);
     
     window.addEventListener("drop",AudioBytes._Game.drop);
     window.addEventListener("dragenter",AudioBytes._Game.dragEnter);
