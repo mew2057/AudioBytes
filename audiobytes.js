@@ -57,11 +57,11 @@ AudioBytes.prototype.drawWave = function()
     this.context.beginPath();
 
     this.context.moveTo(0,AudioBytes.startY + this.audioDeque[0] - 128);
-
-    for (var cell  = 1, renderPos = 2; cell <  this.audioDeque.length; cell++, renderPos +=4)
+    
+    for (var cell  = 1, renderPos = 2; cell <  this.audioDeque.length; cell++, renderPos += 4)
     {
-      //  this.context.moveTo(renderPos, AudioBytes.startY + this.audioDeque[cell] - 128);
-        this.context.lineTo(renderPos+ 4,AudioBytes.startY + this.audioDeque[cell] - 128);
+        this.context.moveTo(renderPos, AudioBytes.startY + this.audioDeque[cell] - 128);
+        this.context.lineTo(renderPos +4,AudioBytes.startY + this.audioDeque[cell] - 128);
     }
     this.context.lineTo(renderPos,AudioBytes.startY);
     this.context.stroke();
@@ -96,9 +96,27 @@ AudioBytes.gameLoop = function()
 
 };
 
+// does a super basic check (This is wicked inaccurate!).
+AudioBytes.collides = function(actor)
+{
+    if(actor.sprites.length > 0)
+        for(var index = actor.x; index < actor.x + actor.sprites[actor.currentSprite].w ; index++)
+        {
+            if(AudioBytes._Game.audioDeque[index] <= actor.y - AudioBytes.startY + 128 && 
+                AudioBytes._Game.audioDeque[index] >= actor.y - AudioBytes.startY + 128  - actor.velocity[1])
+            {
+                actor.y = AudioBytes._Game.audioDeque[index] + AudioBytes.startY - 128;
+                return true;
+            }
+        }
+            
+    return false;
+};
+
 AudioBytes.init = function()
 {
     AudioBytes._Game = new AudioBytes();
+    Actor.GAME_WORLD_COLLIDE_CALLBACK = AudioBytes.collides;
     
     try {
         AudioBytes._Game.audioContext = new window.webkitAudioContext();
@@ -154,7 +172,7 @@ AudioBytes.init = function()
 
     AudioBytes._Game.actor = Player.initFromFile("spriteSheet.json",AudioBytes._Game.context);
     AudioBytes._Game.actor.x = 25;
-    AudioBytes._Game.actor.y = 219;
+    AudioBytes._Game.actor.y = 200;
     
     AudioBytes._Game.controller = new Controller();
     AudioBytes._Game.controller.init(AudioBytes._Game.actor);

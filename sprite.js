@@ -6,7 +6,8 @@ function Sprite()
 }
 
 Actor.DEFAULT_ANIMATE_TIME = 10;
-Actor.DEFAULT_GRAVITY = 10;
+Actor.DEFAULT_GRAVITY = 0.5;
+Actor.GAME_WORLD_COLLIDE_CALLBACK = null;
 
 
 function Actor()
@@ -36,7 +37,7 @@ Actor.prototype.draw = function()
             this.sprites[this.currentSprite].frame.y,  
             this.sprites[this.currentSprite].frame.w, 
             this.sprites[this.currentSprite].frame.h, 
-            this.x, this.y,
+            this.x, this.y - this.sprites[this.currentSprite].frame.h,
             this.sprites[this.currentSprite].frame.w, 
             this.sprites[this.currentSprite].frame.h);
 };
@@ -47,8 +48,50 @@ Actor.prototype.update = function()
     if(++this.animationCounter === this.animationTime)
         this.animate();
         
-    
+    this.doPhysics();
+};
 
+Actor.prototype.doPhysics = function()
+{
+    if(this.acceleration[1] < 0)
+    {
+        this.velocity[1] += this.acceleration[1];
+        this.acceleration[1] = 0;
+    }
+    else
+    {        
+        if(Actor.checkCollide(this))
+        {
+            this.acceleration[1] = 0;   
+            this.velocity[1] = 0;       
+        }
+        else
+        {
+           this.acceleration[1] = Actor.DEFAULT_GRAVITY;
+        }
+    }
+    
+    
+    this.x += this.velocity[0];
+    this.y += this.velocity[1];
+    
+    this.velocity[0] += this.acceleration[0];
+    this.velocity[1] += this.acceleration[1];
+    
+};
+
+Actor.checkCollide = function(actor1, actor2)
+{
+    if(!actor2)
+    {
+        return Actor.GAME_WORLD_COLLIDE_CALLBACK(actor1);
+    }
+    else
+    {
+        return actor2.x > actor1.x && actor2.y < actor1.y && 
+                actor2.x < (actor1.x + actor1.sprites[actor1.currentSprite].w) &&
+                actor2.y > (actor1.y - actor1.sprites[actor1.currentSprite].h);
+    }
 };
 
 Actor.prototype.animate = function()
@@ -114,8 +157,11 @@ Actor.prototype.setAnimation = function(animationName)
             break;
     }
     
-    this.currentAnimation = index;
-    
+    if(this.currentAnimation !== index)
+    {
+        this.currentAnimation = index;    
+        this.animate();
+    }
 };
 
 Player.prototype = new Actor();
@@ -133,6 +179,16 @@ Player.prototype.update =  function()
         this.handleInput();
         
     this.super_update();
+    
+    if(this.velocity[1] === 0 && this.acceleration[1] === 0)
+    {
+        this.setAnimation("run");
+    }
+    else
+    {
+        this.setAnimation("jump");
+    }
+    
 };
 
 Player.initFromFile = function (fileName,screen)
@@ -149,8 +205,10 @@ Player.prototype.handleInput = function()
     switch(this.queuedInput.pop())
     {
         case "jump":
-            if(this.acceleration[1] === 0)
-                this.acceleration[1] = 5;
+            if(this.velocity[1] === 0)
+            {
+                this.acceleration[1] = -12;
+            }
             break;
         default:
             break;
