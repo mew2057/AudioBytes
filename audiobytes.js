@@ -10,6 +10,8 @@
      http://airtightinteractive.com/demos/js/reactive/
    This example is what made me realize at least the audio processing in browser 
      was possible and resulted in me pursuing this project.
+     
+    Lead Programmer: John Dunham
    ------------ */
  
 window.requestAnimFrame = (function(){
@@ -34,6 +36,7 @@ function AudioBytes()
     this.audioSource = null;            // The source variable that is associated with the context (actaully plays the music).
     this.audioAnalyzer = null;          // Performs the FFT on the audio data (a webkit audio api variable).
     this.volume = 0.5;                  // The volume of the song.
+    this.volumeNode = null;
     
     this.audioScratch = null;           // A scratch buffer for audio analyzer data.
     this.domainScratch = null;          // A scratch buffer for domain data that is used in drawing the bars.
@@ -43,6 +46,7 @@ function AudioBytes()
     
     this.audioDeque = null;             // A deque for audio data (currently unused)
     this.audioDeque2 = null;            // A deque for audio data (used for frequency data)
+    this.drawGradient = null;
 
 }
 
@@ -87,7 +91,7 @@ AudioBytes.prototype.drawWave = function()
     
     // Draw the frequency.
 
-    this.context.fillStyle = "black";
+    this.context.fillStyle = AudioBytes._Game.drawGradient;
     
     this.context.moveTo(0,this.canvas.height - this.domainScratch[0]);
 
@@ -195,8 +199,8 @@ AudioBytes.init = function()
         AudioBytes._Game.audioAnalyzer  = AudioBytes._Game.audioContext.createAnalyser();
         AudioBytes._Game.audioDeque = [];
         AudioBytes._Game.audioDeque2 = [];
-        AudioBytes._Game.audioAnalyzer.frequencyBinCount = 100;
-        
+        AudioBytes._Game.audioAnalyzer.fftSize = 512;
+
         // Initialize the deques
         for (var cell = 0; cell < 256; cell ++ )
         {
@@ -214,6 +218,9 @@ AudioBytes.init = function()
         // Initialize the scratch.
         AudioBytes._Game.audioAnalyzer.getByteTimeDomainData(
             AudioBytes._Game.audioScratch);
+            
+        AudioBytes._Game.volumeNode = AudioBytes._Game.audioContext.createGainNode();
+        AudioBytes._Game.volumeNode.gain.value = 0.5;
     
     }
     catch(e) {
@@ -231,11 +238,12 @@ AudioBytes.init = function()
     });    
     $("#AudioBytesCanvas").focus();
     
+    
     //Uses FileReader, Audio API,Session Storage
 
     // Sets up the canvas and drawing context details for the game.
     AudioBytes._Game.canvas = document.getElementById("AudioBytesCanvas");
-    AudioBytes._Game.canvas.width = 1020;
+    AudioBytes._Game.canvas.width = 1024;
     AudioBytes._Game.canvas.height = 500;
     AudioBytes.startY = AudioBytes._Game.canvas.height/2 ;//+ AudioBytes._Game.canvas.height/8;
 
@@ -246,6 +254,11 @@ AudioBytes.init = function()
     
     AudioBytes._Game.context.strokeStyle="blue";
     AudioBytes._Game.context.lineWidth = 2.0;
+    
+    // This fakes heat data. (just me having some fun tbh)
+    AudioBytes._Game.drawGradient = AudioBytes._Game.context.createLinearGradient(0,AudioBytes._Game.canvas.height,0,0);
+    AudioBytes._Game.drawGradient.addColorStop(0,'black');
+    AudioBytes._Game.drawGradient.addColorStop(0.5,'red');
         
 
     // Initialize the actor that the user will control.
@@ -330,13 +343,16 @@ AudioBytes.prototype.startSong = function(buffer)
     this.audioSource = this.audioContext.createBufferSource();
     this.audioSource.buffer = buffer;
     
-    // Connects the analyzer and the context destination to the audio context.
-    this.audioSource.connect(this.audioAnalyzer);    
-    this.audioSource.connect(this.audioContext.destination);
-    this.audioSource.gain.value = this.volume;
+    this.audioSource.gain.value = 0.5;
+    // MAGIC!
+    this.audioSource.connect(this.audioAnalyzer);
     
-    console.log(this.volumeNode, this.audioSource);
+    // Connect the "stereo" to the volume dial.
+    this.audioSource.connect(this.volumeNode);
     
+    // Connect the "speakers" to the volume control.
+    this.volumeNode.connect(this.audioContext.destination);
+
     // Start the song and change the drawing function.
     this.audioSource.noteOn(0);
     AudioBytes._Game.drawFunct = AudioBytes._Game.drawWave;
