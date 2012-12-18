@@ -23,7 +23,7 @@ Controller.prototype.mouseClick = function()
 
 /**
  * Initializes the controller with the player and begins listing to button inputs.
- * @param player The linkedplayer.
+ * @param player The linked player.
  */
 Controller.prototype.init = function(player)
 {

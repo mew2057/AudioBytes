@@ -33,6 +33,8 @@ function AudioBytes()
     this.audioContext = null;           // The audio context for the game.
     this.audioSource = null;            // The source variable that is associated with the context (actaully plays the music).
     this.audioAnalyzer = null;          // Performs the FFT on the audio data (a webkit audio api variable).
+    this.volume = 0.5;                  // The volume of the song.
+    
     this.audioScratch = null;           // A scratch buffer for audio analyzer data.
     this.domainScratch = null;          // A scratch buffer for domain data that is used in drawing the bars.
     this.drawFunct = this.drawWave;     // A pointer to the currently active drawing function.
@@ -83,7 +85,7 @@ AudioBytes.prototype.drawWave = function()
     
     this.context.stroke();
     
-    // Draw the time domain.
+    // Draw the frequency.
 
     this.context.fillStyle = "black";
     
@@ -93,21 +95,21 @@ AudioBytes.prototype.drawWave = function()
     {
         this.context.fillRect(renderPos,this.canvas.height,2 ,-(this.domainScratch[cell]));
     }
-    
-    // Draw the frequency data
+    /*
+    // Draw the time domain data
     
     this.context.beginPath();
     
     this.context.strokeStyle = "blue";
     this.context.moveTo(0,AudioBytes.startY - this.audioDeque2[0]);
 
-    for (var cell  = 1, renderPos = 2; cell <  this.audioDeque.length; cell++, renderPos += 4)
+    for (cell  = 1, renderPos = 2; cell <  this.audioDeque.length; cell++, renderPos += 4)
     {
         this.context.lineTo(renderPos + 4,AudioBytes.startY - this.audioDeque2[cell]);
     }
     
     this.context.lineTo(renderPos,AudioBytes.startY);
-    this.context.stroke();
+    this.context.stroke();*/
     
     this.context.restore();
 };
@@ -130,12 +132,13 @@ AudioBytes.sumArray = function(toSum)
  */
 AudioBytes.prototype.update = function()
 {
-    this.audioAnalyzer.getByteTimeDomainData(this.domainScratch);
+    this.audioAnalyzer.getByteFrequencyData(this.domainScratch);
  
-    this.audioAnalyzer.getByteFrequencyData(this.audioScratch);
+ /*
+    this.audioAnalyzer.getByteTimeDomainData(this.audioScratch);
     this.audioDeque2.shift();
     this.audioDeque2.push(256-this.audioScratch[0]);
-    
+    */
     if(this.actor)
         this.actor.update();
 };
@@ -192,7 +195,7 @@ AudioBytes.init = function()
         AudioBytes._Game.audioAnalyzer  = AudioBytes._Game.audioContext.createAnalyser();
         AudioBytes._Game.audioDeque = [];
         AudioBytes._Game.audioDeque2 = [];
-        AudioBytes._Game.audioAnalyzer.frequencyBinCount = 256;
+        AudioBytes._Game.audioAnalyzer.frequencyBinCount = 100;
         
         // Initialize the deques
         for (var cell = 0; cell < 256; cell ++ )
@@ -211,12 +214,12 @@ AudioBytes.init = function()
         // Initialize the scratch.
         AudioBytes._Game.audioAnalyzer.getByteTimeDomainData(
             AudioBytes._Game.audioScratch);
-
+    
     }
     catch(e) {
         alert('Web Audio API is not supported in this browser');
     }
-    
+
     // Establishes the canvas with an id and a tabindex.
     $('<canvas id="AudioBytesCanvas" tabIndex="0">HTML5 not supported in your' +
         'browser</canvas>').appendTo('body');
@@ -234,7 +237,7 @@ AudioBytes.init = function()
     AudioBytes._Game.canvas = document.getElementById("AudioBytesCanvas");
     AudioBytes._Game.canvas.width = 1020;
     AudioBytes._Game.canvas.height = 500;
-    AudioBytes.startY = AudioBytes._Game.canvas.height/2 + AudioBytes._Game.canvas.height/8;
+    AudioBytes.startY = AudioBytes._Game.canvas.height/2 ;//+ AudioBytes._Game.canvas.height/8;
 
     AudioBytes._Game.context = AudioBytes._Game.canvas.getContext("2d");      
     
@@ -328,8 +331,11 @@ AudioBytes.prototype.startSong = function(buffer)
     this.audioSource.buffer = buffer;
     
     // Connects the analyzer and the context destination to the audio context.
-    this.audioSource.connect(this.audioContext.destination);
     this.audioSource.connect(this.audioAnalyzer);    
+    this.audioSource.connect(this.audioContext.destination);
+    this.audioSource.gain.value = this.volume;
+    
+    console.log(this.volumeNode, this.audioSource);
     
     // Start the song and change the drawing function.
     this.audioSource.noteOn(0);
