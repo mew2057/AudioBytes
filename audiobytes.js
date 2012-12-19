@@ -47,7 +47,12 @@ function AudioBytes()
     this.audioDeque = null;             // A deque for audio data (currently unused)
     this.audioDeque2 = null;            // A deque for audio data (used for frequency data)
     this.drawGradient = null;
-
+    
+    this.localEnergy = [];              // Represents the AVERAGE local sound energy for the song. Keeps 2 seconds worth of data (e.g. 120 sample collections)
+    this.instantEnergy = 0;             // The Average energy of a location.
+    this.localHistoryEnergy = 0;
+    
+    this.beat = false;
 }
 
 // The psuedo singleton game object.
@@ -56,11 +61,13 @@ AudioBytes._Game = null;
 // The horizon of the game.
 AudioBytes.startY = 0;
 
+AudioBytes.HISTORY_COUNT = 30;
 /**
  * The draw function for the game loop.
  */
 AudioBytes.prototype.draw = function()
 {
+   // this.context.fillStyle = this.beat ? "#E0E0E0" : "white";
     // Clears out the canvas.
     this.context.fillRect(0,0,this.canvas.width,this.canvas.height);
     
@@ -95,14 +102,24 @@ AudioBytes.prototype.drawWave = function()
     
     this.context.moveTo(0,this.canvas.height - this.domainScratch[0]);
 
-    for (var cell  = 1, renderPos = 2; cell <  this.domainScratch.length; cell++, renderPos += 4)
+    for (var cell  = 1, renderPos = 2; cell <  this.domainScratch.length; cell++, renderPos += 2)
     {
-        this.context.fillRect(renderPos,this.canvas.height,2 ,-(this.domainScratch[cell]));
+        this.context.fillRect(renderPos,this.canvas.height,1 ,-(this.domainScratch[cell]));
     }
-    /*
-    // Draw the time domain data
     
-    this.context.beginPath();
+    // Draw the time domain data    
+    this.context.fillStyle ="blue";
+    
+    this.context.moveTo(0,0);
+
+    for (cell  = 1, renderPos = 2; cell <  this.audioScratch.length; cell++, renderPos += 2)
+    {
+        this.context.fillRect(renderPos,0,1 ,this.audioScratch[cell]);
+    }
+    
+    this.context.fillText("Local:" + this.instantEnergy + " Average:" + this.localHistoryEnergy + " " + this.beat, 100, AudioBytes.startY-10  );
+    
+  /*  this.context.beginPath();
     
     this.context.strokeStyle = "blue";
     this.context.moveTo(0,AudioBytes.startY - this.audioDeque2[0]);
@@ -113,8 +130,8 @@ AudioBytes.prototype.drawWave = function()
     }
     
     this.context.lineTo(renderPos,AudioBytes.startY);
-    this.context.stroke();*/
-    
+    this.context.stroke();
+    */
     this.context.restore();
 };
 
@@ -137,12 +154,33 @@ AudioBytes.sumArray = function(toSum)
 AudioBytes.prototype.update = function()
 {
     this.audioAnalyzer.getByteFrequencyData(this.domainScratch);
- 
- /*
+      // Beat Detection.
+    this.instantEnergy = Math.round(AudioBytes.sumArray(this.domainScratch) / this.domainScratch.length);
+    
+    this.localHistoryEnergy = 0;
+    for(var index in this.localEnergy)
+    {
+       this.localHistoryEnergy+=this.localEnergy[index].aEnergy;
+    }
+    
+    this.localHistoryEnergy = Math.round(this.localHistoryEnergy/this.localEnergy.length);
+    
+    this.localEnergy.push({"aEnergy":this.instantEnergy, "sampleSet":this.domainScratch});
+    
+    if(this.localEnergy.length > AudioBytes.HISTORY_COUNT)
+        this.localEnergy.shift();
+        
+    this.beat = this.instantEnergy > 1.2* this.localHistoryEnergy ? true:false; 
+    
+    // End Beat Detection.
+
+    
     this.audioAnalyzer.getByteTimeDomainData(this.audioScratch);
-    this.audioDeque2.shift();
-    this.audioDeque2.push(256-this.audioScratch[0]);
-    */
+    
+   
+   /*  this.audioDeque2.shift();
+    this.audioDeque2.push(AudioBytes.startY - AudioBytes.sumArray(this.audioScratch) / this.audioScratch.length);//256-this.audioScratch[0]);
+   */ 
     if(this.actor)
         this.actor.update();
 };
@@ -199,14 +237,17 @@ AudioBytes.init = function()
         AudioBytes._Game.audioAnalyzer  = AudioBytes._Game.audioContext.createAnalyser();
         AudioBytes._Game.audioDeque = [];
         AudioBytes._Game.audioDeque2 = [];
-        AudioBytes._Game.audioAnalyzer.fftSize = 512;
+        AudioBytes._Game.audioAnalyzer.fftSize = 1024;
 
         // Initialize the deques
         for (var cell = 0; cell < 256; cell ++ )
         {
-            AudioBytes._Game.audioDeque.push(128);
-            AudioBytes._Game.audioDeque2.push(0);
+            AudioBytes._Game.audioDeque.push(0);
+            AudioBytes._Game.audioDeque2.push(128);
         }
+
+        for (cell = 0; cell < AudioBytes.HISTORY_COUNT; cell++)
+            AudioBytes._Game.localEnergy.push({"aEnergy":0, "sampleSet":[]});
         
         // Set up the scratch  space for using the audio context analyzer.
         AudioBytes._Game.audioScratch = new Uint8Array(
