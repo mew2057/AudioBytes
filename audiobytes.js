@@ -51,6 +51,10 @@ function AudioBytes()
     this.localEnergy = [];              // Represents the AVERAGE local sound energy for the song. Keeps 2 seconds worth of data (e.g. 120 sample collections)
     this.instantEnergy = 0;             // The Average energy of a location.
     this.localHistoryEnergy = 0;
+    this.localBass = 0;
+    this.localTreble = 0;
+    
+    this.scriptProcessor = null;
     
     this.beat = false;
 }
@@ -62,6 +66,8 @@ AudioBytes._Game = null;
 AudioBytes.startY = 0;
 
 AudioBytes.HISTORY_COUNT = 30;
+
+AudioBytes.BassWindow = {"base":0,"limit":0};
 /**
  * The draw function for the game loop.
  */
@@ -112,26 +118,34 @@ AudioBytes.prototype.drawWave = function()
     
     this.context.moveTo(0,0);
 
-    for (cell  = 1, renderPos = 2; cell <  this.audioScratch.length; cell++, renderPos += 2)
+/*    for (cell  = 1, renderPos = 2; cell <  this.audioScratch.length; cell++, renderPos += 2)
     {
         this.context.fillRect(renderPos,0,1 ,this.audioScratch[cell]);
     }
     
-    this.context.fillText("Local:" + this.instantEnergy + " Average:" + this.localHistoryEnergy + " " + this.beat, 100, AudioBytes.startY-10  );
-    
-  /*  this.context.beginPath();
+    for (cell  = 1, renderPos = 2; cell <  this.audioDeque.length; cell++, renderPos += 2)
+    {
+        this.context.fillRect(renderPos,AudioBytes.startY,1 ,-(this.audioDeque[cell]));
+    }
+    */
+    this.context.fillText("Local:" + this.instantEnergy + " Average:" + this.localHistoryEnergy + 
+        " Time:" + AudioBytes.fractalDimension(this.audioScratch).toFixed(2) + " aFreq:" + 
+        AudioBytes.fractalDimension(this.audioDeque).toFixed(2) + " Freq:" + 
+        AudioBytes.fractalDimension(this.domainScratch).toFixed(2) +" " + this.beat, 0, 10  );
+
+    this.context.beginPath();
     
     this.context.strokeStyle = "blue";
-    this.context.moveTo(0,AudioBytes.startY - this.audioDeque2[0]);
+    this.context.moveTo(0,AudioBytes.startY - this.audioDeque[0]);
 
-    for (cell  = 1, renderPos = 2; cell <  this.audioDeque.length; cell++, renderPos += 4)
+    for (cell  = 1, renderPos = 2; cell <  this.audioDeque.length; cell++, renderPos += 2)
     {
-        this.context.lineTo(renderPos + 4,AudioBytes.startY - this.audioDeque2[cell]);
+        this.context.lineTo(renderPos ,AudioBytes.startY - this.audioDeque[cell]);
     }
     
     this.context.lineTo(renderPos,AudioBytes.startY);
     this.context.stroke();
-    */
+    
     this.context.restore();
 };
 
@@ -152,32 +166,8 @@ AudioBytes.sumArray = function(toSum)
  * The update function to be called in the game loop.
  */
 AudioBytes.prototype.update = function()
-{
-    this.audioAnalyzer.getByteFrequencyData(this.domainScratch);
-      // Beat Detection.
-    this.instantEnergy = Math.round(AudioBytes.sumArray(this.domainScratch) / this.domainScratch.length);
-    
-    this.localHistoryEnergy = 0;
-    for(var index in this.localEnergy)
-    {
-       this.localHistoryEnergy+=this.localEnergy[index].aEnergy;
-    }
-    
-    this.localHistoryEnergy = Math.round(this.localHistoryEnergy/this.localEnergy.length);
-    
-    this.localEnergy.push({"aEnergy":this.instantEnergy, "sampleSet":this.domainScratch});
-    
-    if(this.localEnergy.length > AudioBytes.HISTORY_COUNT)
-        this.localEnergy.shift();
-        
-    this.beat = this.instantEnergy > 1.2* this.localHistoryEnergy ? true:false; 
-    
-    // End Beat Detection.
-
-    
-    this.audioAnalyzer.getByteTimeDomainData(this.audioScratch);
-    
-   
+{  
+    this.processAudio();
    /*  this.audioDeque2.shift();
     this.audioDeque2.push(AudioBytes.startY - AudioBytes.sumArray(this.audioScratch) / this.audioScratch.length);//256-this.audioScratch[0]);
    */ 
@@ -185,6 +175,100 @@ AudioBytes.prototype.update = function()
         this.actor.update();
 };
 
+AudioBytes.prototype.processAudio = function()
+{
+    
+    this.audioAnalyzer.getByteFrequencyData(this.domainScratch);
+    // Beat Detection.
+    this.instantEnergy = Math.round(AudioBytes.sumArray(this.domainScratch) / this.domainScratch.length);
+    
+    this.localHistoryEnergy = 0;
+    this.localBass          = 0;
+    this.localTreble        = 0;
+    
+    
+    for(var index in this.localEnergy)
+    {
+       this.localHistoryEnergy+=this.localEnergy[index].aEnergy;
+    }
+    
+    this.localHistoryEnergy = Math.round(this.localHistoryEnergy/this.localEnergy.length);
+    
+    this.localEnergy.push({"aEnergy":this.instantEnergy, "aBass":0, "aTreble":0});
+    
+    if(this.localEnergy.length > AudioBytes.HISTORY_COUNT)
+        this.localEnergy.shift();
+        
+    this.beat = this.instantEnergy > 1.3 * this.localHistoryEnergy ? true:false;     
+    // End Beat Detection.
+
+    this.audioAnalyzer.getByteTimeDomainData(this.audioScratch);
+    
+
+    this.audioDeque.push(this.instantEnergy);
+    this.audioDeque.shift();
+    
+    
+};
+
+// This is academic/experminetal
+
+AudioBytes.fractal = {"a":32, "b":16};
+AudioBytes.fractalGrid = null;
+// 5 and 10 y
+// 32 and 64 x
+AudioBytes.initFractalGrid = function()
+{
+    AudioBytes.fractalGrid = [];
+    for(var index = 0; index < 16; index++)
+    {
+        AudioBytes.fractalGrid.push(new Array(64));
+    }
+};
+
+AudioBytes.wipeGrid = function()
+{
+    for(var y = 0; y < 16; y++)
+        for(var x = 0; x < 64; x++)
+            AudioBytes.fractalGrid[y][x] = false;
+};
+
+AudioBytes.fractalDimension = function(waveform)
+{
+    var largeBox = 0, smallBox = 0, retVal = 0, boxesFound = 0;
+    
+    if(!AudioBytes.fractalGrid)
+        AudioBytes.initFractalGrid();
+    
+    for(var index = 0; index < waveform.length; index++)
+    {
+        AudioBytes.fractalGrid[Math.floor(waveform[index]/16)][Math.floor(index/16)] = true;
+    }
+                    
+    
+    for(index = 0; index < 10; index+=2)
+    {
+        for(var x = 0;  x < 64; x+=2)
+        {
+            boxesFound += AudioBytes.fractalGrid[index][x]         ? 1 : 0;
+            boxesFound += AudioBytes.fractalGrid[index][x + 1]     ? 1 : 0;
+            boxesFound += AudioBytes.fractalGrid[index + 1][x]     ? 1 : 0;
+            boxesFound += AudioBytes.fractalGrid[index + 1][x + 1] ? 1 : 0;
+            
+            smallBox += boxesFound;           
+          
+            largeBox += boxesFound > 0 ? 1 : 0;
+            boxesFound = 0;
+        }
+    }
+    retVal = Math.log(smallBox/largeBox)/Math.log(2);
+    
+    AudioBytes.wipeGrid();
+    
+    return retVal;
+};
+
+// End Fractal stuff
 /**
  * The audio bytes game loop.
  */
@@ -196,6 +280,8 @@ AudioBytes.gameLoop = function()
     window.requestAnimFrame(AudioBytes.gameLoop);
 
 };
+
+
 
 /**
  * Performs a global collide check for an actor. Right now it only performs a 
@@ -240,14 +326,14 @@ AudioBytes.init = function()
         AudioBytes._Game.audioAnalyzer.fftSize = 1024;
 
         // Initialize the deques
-        for (var cell = 0; cell < 256; cell ++ )
+        for (var cell = 0; cell < 512; cell ++ )
         {
             AudioBytes._Game.audioDeque.push(0);
-            AudioBytes._Game.audioDeque2.push(128);
+            //AudioBytes._Game.audioDeque2.push(128);
         }
 
         for (cell = 0; cell < AudioBytes.HISTORY_COUNT; cell++)
-            AudioBytes._Game.localEnergy.push({"aEnergy":0, "sampleSet":[]});
+            AudioBytes._Game.localEnergy.push({"aEnergy":0, "aBass":0, "aTreble":0});
         
         // Set up the scratch  space for using the audio context analyzer.
         AudioBytes._Game.audioScratch = new Uint8Array(
@@ -262,6 +348,10 @@ AudioBytes.init = function()
             
         AudioBytes._Game.volumeNode = AudioBytes._Game.audioContext.createGainNode();
         AudioBytes._Game.volumeNode.gain.value = 0.5;
+        
+        /*
+        AudioBytes._Game.scriptProcessor = AudioBytes._Game.audioContext.createJavaScriptNode(AudioBytes._Game.audioAnalyzer.frequencyBinCount, 1 , 1);        
+        AudioBytes._Game.scriptProcessor.onaudioprocess  = AudioBytes.processAudio;*/
     
     }
     catch(e) {
@@ -386,7 +476,8 @@ AudioBytes.prototype.startSong = function(buffer)
     
     this.audioSource.gain.value = 0.5;
     // MAGIC!
-    this.audioSource.connect(this.audioAnalyzer);
+    this.audioSource.connect(this.audioAnalyzer);    
+    //this.audioAnalyzer.connect(this.scriptProcessor);
     
     // Connect the "stereo" to the volume dial.
     this.audioSource.connect(this.volumeNode);
@@ -396,8 +487,7 @@ AudioBytes.prototype.startSong = function(buffer)
 
     // Start the song and change the drawing function.
     this.audioSource.noteOn(0);
-    AudioBytes._Game.drawFunct = AudioBytes._Game.drawWave;
-    
+    AudioBytes._Game.drawFunct = AudioBytes._Game.drawWave;    
     
     // TODO find a better solution for this.
     width = 0;
