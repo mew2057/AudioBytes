@@ -1,7 +1,7 @@
 /* ------------
    audiobytes.js
    
-   Assumes:
+   Uses: sprite.js, controller.js, audio.js
    
    Author: John Dunham
    
@@ -24,12 +24,26 @@ window.requestAnimFrame = (function(){
  
 var app = app || {};
 
-app.audiobytes = 
+app.Audiobytes = 
 {
-    
+	controller : undefined,
+	context    : undefined,
+    player     : undefined,
+	audio      : undefined,
+	
     init : function()
     {
         console.log("hello world");
+		
+		this.audio = new app.Audio();
+		
+		//this.context;
+
+		this.player = app.Player.initFromFile("../sprites/spriteSheet.json", this.context);
+		
+		
+		this.controller = new app.Controller();
+		this.controller.init(this.player);
     },
     
     update : function()

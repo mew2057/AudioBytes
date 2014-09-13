@@ -1,18 +1,7 @@
-# README for a newly created project.
+A really rough prototype that leverages webkit audio and waveform processing to create a platformer that procedurally generates the game world from user supplied music. In its current form the game is more or less a tech demo, a proof of concept.
 
-There are a couple of things you should do first, before you can use all of Git's power:
+At present the player is able to make the character jump by clicking their mouse and play music that is dragged onto the web page, which is then visualized with the Fast Fourier Transform data produced by the webkit audio. The blue line represents the instant energy and the reddish bars represent the values present in the FFT frequency bins.
 
-  * Add a remote to this project: in the Cloud9 IDE command line, you can execute the following commands
-    `git remote add [remote name] [remote url (eg. 'git@github.com:/ajaxorg/node_chat')]` [Enter]
-  * Create new files inside your project
-  * Add them to to Git by executing the following command
-    `git add [file1, file2, file3, ...]` [Enter]
-  * Create a commit which can be pushed to the remote you just added
-    `git commit -m 'added new files'` [Enter]
-  * Push the commit the remote
-    `git push [remote name] master` [Enter]
+The top portion of the screen represents the processed information extracted from audio file. Local is the instant energy of the waveform, Average is the moving average energy, Time represents the fractal dimension of the domain data of the FFT, aFreq is the fractal dimension of the average frequency, Freq is the fractal dimension of the current batch of frequencies and Beat is an attempt at beat detection using the local and average energies of the waveform.
 
-That's it! If this doesn't work for you, please visit the excellent resources from [Github.com](http://help.github.com) and the [Pro Git](http://http://progit.org/book/) book.
-If you can't find your answers there, feel free to ask us via Twitter (@cloud9ide), [mailing list](groups.google.com/group/cloud9-ide) or IRC (#cloud9ide on freenode).
-
-Happy coding!
+At the time of writing this idea is still being ironed out and I'm still attempting to determine exactly how to handle the generation algorithm.
