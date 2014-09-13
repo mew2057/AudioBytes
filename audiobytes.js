@@ -128,10 +128,11 @@ AudioBytes.prototype.drawWave = function()
         this.context.fillRect(renderPos,AudioBytes.startY,1 ,-(this.audioDeque[cell]));
     }
     */
-    this.context.fillText("Local:" + this.instantEnergy + " Average:" + this.localHistoryEnergy + 
-        " Time:" + AudioBytes.fractalDimension(this.audioScratch).toFixed(2) + " aFreq:" + 
-        AudioBytes.fractalDimension(this.audioDeque).toFixed(2) + " Freq:" + 
-        AudioBytes.fractalDimension(this.domainScratch).toFixed(2) +" " + this.beat, 0, 10  );
+	this.context.font = '25pt Calibri';
+    this.context.fillText("Local: " + this.instantEnergy + " Average: " + this.localHistoryEnergy + 
+        " Time: " + AudioBytes.fractalDimension(this.audioScratch).toFixed(2) + " aFreq: " + 
+        AudioBytes.fractalDimension(this.audioDeque).toFixed(2) + " Freq: " + 
+        AudioBytes.fractalDimension(this.domainScratch).toFixed(2) +" Beat: " + this.beat, 0, 25  );
 
     this.context.beginPath();
     
@@ -211,7 +212,7 @@ AudioBytes.prototype.processAudio = function()
     
 };
 
-// This is academic/experminetal
+// This is academic/experimental
 
 AudioBytes.fractal = {"a":32, "b":16};
 AudioBytes.fractalGrid = null;
@@ -241,9 +242,10 @@ AudioBytes.fractalDimension = function(waveform)
         AudioBytes.initFractalGrid();
     
     for(var index = 0; index < waveform.length; index++)
-    {
+    {		
         AudioBytes.fractalGrid[Math.floor(waveform[index]/16)][Math.floor(index/16)] = true;
     }
+
                     
     
     for(index = 0; index < 10; index+=2)
@@ -346,7 +348,7 @@ AudioBytes.init = function()
         AudioBytes._Game.audioAnalyzer.getByteTimeDomainData(
             AudioBytes._Game.audioScratch);
             
-        AudioBytes._Game.volumeNode = AudioBytes._Game.audioContext.createGainNode();
+        AudioBytes._Game.volumeNode = AudioBytes._Game.audioContext.createGain();
         AudioBytes._Game.volumeNode.gain.value = 0.5;
         
         /*
@@ -474,7 +476,6 @@ AudioBytes.prototype.startSong = function(buffer)
     this.audioSource = this.audioContext.createBufferSource();
     this.audioSource.buffer = buffer;
     
-    this.audioSource.gain.value = 0.5;
     // MAGIC!
     this.audioSource.connect(this.audioAnalyzer);    
     //this.audioAnalyzer.connect(this.scriptProcessor);
