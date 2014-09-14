@@ -162,7 +162,7 @@ app.Actor = function()
 		  
 		  for(var index in data.frames)
 		  {
-			tempSprite = new Sprite();
+			tempSprite = new app.Sprite();
 			
 			tempSprite.frame = data.frames[index].frame;
 			
@@ -224,19 +224,20 @@ app.Actor = function()
 	/**
 	 * The initializer for the Actor class.
 	 * 
-	 * @param fileName The name of the sprite sheet json file for the actor.
+	 * @param uri The name of the sprite sheet json file for the actor.
 	 * @param screen The HTML5 canvas context.
 	 * @param object {Optional} A pre allocated actor.
 	 * 
 	 * @return A fully initialized actor.
 	 */
-	Actor.initFromFile = function(fileName,screen,object)
+	Actor.initFromFile = function(uri,screen,object)
 	{
 		// Get the base actor data from the json with an ajax request.
 		var scratchActor = object ? object : new Actor();
+	
 		var spriteData = JSON.parse($.ajax({
 			type    : "GET",
-			url     : fileName,
+			url     : uri,
 			async: false
 			
 		}).responseText);

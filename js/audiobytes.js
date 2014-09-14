@@ -27,9 +27,10 @@ var app = app || {};
 app.Audiobytes = 
 {
 	controller : undefined,
-	context    : undefined,
+	ctx        : undefined,
     player     : undefined,
 	audio      : undefined,
+	startY 	   : 0,
 	
     init : function()
     {
@@ -53,19 +54,44 @@ app.Audiobytes =
             "-ms-interpolation-mode": "nearest-neighbor"
 		});    
 		$("#AudioBytesCanvas").focus();
-
-		/*this.player = app.Player.initFromFile("../sprites/spriteSheet.json", this.context);*/
 		
+		// TODO nix magic numbers.
+		var canvas = document.getElementById("AudioBytesCanvas");
+		canvas.width  = 1024;
+		canvas.height = 500;
+		
+		// Set the canvas related variables.
+		this.startY   = canvas.height;
+		this.ctx      = canvas.getContext("2d");
+		
+		// Clears the screen.
+		this.ctx.fillStyle = "white";
+		this.ctx.fillRect(0,0,this.ctx.canvas.width,this.ctx.canvas.height);
+		
+		// Sets up a gradient for "heat data".
+		this.ctx.drawGradient = this.ctx.createLinearGradient(0,this.ctx.canvas.height,0,0);
+		this.ctx.drawGradient.addColorStop(0,'black');
+		this.ctx.drawGradient.addColorStop(0.5,'red');
+
+		this.player = app.Player.initFromFile("spriteSheet.json", this.context);
 		
 		this.controller = new app.Controller();
-		this.controller.init(this.player);
-    },
+		this.controller.init( this.player );
+		
+		this.update( );
+    }, 
     
-    update : function()
+    update : function( )
     {
+	console.log(this);
         // Update stuff
         
         // Draw Stuff
+		
+		this.ctx.clearRect(0, 0, this.ctx.width, this.ctx.height);
+		this.player.draw();
+		
+		window.requestAnimFrame( this.update.bind(this) );
     },
 	
 	dropFile : function()
