@@ -76,7 +76,6 @@ app.Audiobytes =
 		this.player = new app.Player();// app.Player.initFromFile("spriteSheet.json", this.ctx);
 		this.player.initSpriteFromFile( "spriteSheet.json" );
 		
-		this.player.initSpriteFromFile( "spriteSheet.json" );
 		this.controller = new app.Controller();
 		this.controller.init( this.player );
 		
