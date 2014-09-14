@@ -32,7 +32,28 @@ app.Audio = function()
 		// Connect the nodes in a meaningful manner.
 		this.audioContext.connect(this.gainNode);
 		this.audioContext.connect(this.analyzer);
-		
+	}
+	
+	/**
+	 * An error callback for load errors.
+	 */
+	Audio.loadError = function()
+	{
+		alert("Your song has failed to decode, I am sorry");  
+	}
+	
+	Audio.prototype = 
+	{
+		/**
+		 * Processes a FileReader onload event.		 
+		 */
+		onload : function( event )
+		{
+			this.audioContext.decodeAudioData( event.target.result, function(buffer) {
+				this.startSong(buffer);
+			}, Audio.loadError );
+		}
+	
 	}
 	
 	return Audio;

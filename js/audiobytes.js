@@ -46,15 +46,15 @@ app.Audiobytes =
 		//Removes the focus border and ensures the images are crisp regardless of browser.
 		$("#AudioBytesCanvas").css({
 			"outline":"0",
-			"image-rendering": "-moz-crisp-edges";         
-            "image-rendering": "-o-crisp-edges";           
-            "image-rendering": "-webkit-optimize-contrast";
-            "image-rendering": "crisp-edges"              
-            "-ms-interpolation-mode": "nearest-neighbor";                                                        
+			"image-rendering": "-moz-crisp-edges",         
+            "image-rendering": "-o-crisp-edges",           
+            "image-rendering": "-webkit-optimize-contrast",
+            "image-rendering": "crisp-edges",              
+            "-ms-interpolation-mode": "nearest-neighbor"
 		});    
 		$("#AudioBytesCanvas").focus();
 
-		this.player = app.Player.initFromFile("../sprites/spriteSheet.json", this.context);
+		/*this.player = app.Player.initFromFile("../sprites/spriteSheet.json", this.context);*/
 		
 		
 		this.controller = new app.Controller();
@@ -66,5 +66,10 @@ app.Audiobytes =
         // Update stuff
         
         // Draw Stuff
-    }
+    },
+	
+	dropFile : function()
+	{
+	
+	}
 }
