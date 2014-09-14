@@ -73,17 +73,19 @@ app.Audiobytes =
 		this.ctx.drawGradient.addColorStop(0,'black');
 		this.ctx.drawGradient.addColorStop(0.5,'red');
 
-		this.player = app.Player.initFromFile("spriteSheet.json", this.context);
+		this.player = new app.Player();// app.Player.initFromFile("spriteSheet.json", this.ctx);
+		this.player.initSpriteFromFile( "spriteSheet.json" );
 		
+		this.player.initSpriteFromFile( "spriteSheet.json" );
 		this.controller = new app.Controller();
 		this.controller.init( this.player );
 		
-		this.update( );
+		//this.update( );
     }, 
     
     update : function( )
     {
-	console.log(this);
+		console.log(this);
         // Update stuff
         
         // Draw Stuff
