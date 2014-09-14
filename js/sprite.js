@@ -276,7 +276,7 @@ app.Player = function()
 		this.queuedInput = [];
 		
 		// Allows me to reuse the actor update code.
-		this.super_update = Actor.prototype.update;
+		this.super_update = app.Actor.prototype.update;
 	}
 	
 	// Define the player as a sub class of Actor.
@@ -334,12 +334,10 @@ app.Player = function()
 	{
 		var scratchPlayer = new Player();
 		
-		scratchPlayer = Actor.initFromFile(fileName, screen, scratchPlayer);
+		scratchPlayer = app.Actor.initFromFile(fileName, screen, scratchPlayer);
 		
 		return scratchPlayer;
 	};
 	
 	return Player;
 }();
-
-

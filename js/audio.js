@@ -19,12 +19,19 @@ app.Audio = function()
 	function Audio()
 	{
 		// CrossBrowser
-		var audioContext = window.AudioContext || window.webkitAudioContext;
-		this.audioContext = new AudioContext();
+		this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+		
+		// Creates the gain node.
+		this.gainNode = this.audioContext.createGain();
+		this.gainNode.value = .5;
 		
 		// Create an analyzer and set the FFTs.
 		this.analyzer = this.audioContext.createAnalyser();
 		this.analyzer.fftSize = Audio.FFT_SIZE;
+		
+		// Connect the nodes in a meaningful manner.
+		this.audioContext.connect(this.gainNode);
+		this.audioContext.connect(this.analyzer);
 		
 	}
 	
