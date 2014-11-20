@@ -33,10 +33,11 @@ app.Audiobytes =
 	startY 	   : 0,
 	
     init : function()
-    {
-        console.log("hello world");
-		
+    {		
 		this.audio = new app.Audio();
+		
+		// XXX This may need a promise or event handler.
+		app.FileManager.enableFileInput(this.audio.fileLoaded.bind(this.audio));
 		
 		// Sets up the canvas on the screen.
 		// TODO allow this canvas to be existent.		
@@ -95,8 +96,4 @@ app.Audiobytes =
 		window.requestAnimFrame( this.update.bind(this) );
     },
 	
-	dropFile : function()
-	{
-	
-	}
 }

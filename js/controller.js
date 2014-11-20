@@ -47,7 +47,7 @@ app.Controller = function()
 		 */
 		mouseClick : function()
 		{
-			this.player.queuedInput.push("jump");
+			//this.player.queuedInput.push("jump");
 		},
 		
 		
