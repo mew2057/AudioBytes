@@ -31,6 +31,8 @@ app.Audiobytes =
     player     : undefined,
 	audio      : undefined,
 	startY 	   : 0,
+	loading    : false,
+	gradient   : undefined, 
 	
     init : function()
     {		
@@ -38,6 +40,9 @@ app.Audiobytes =
 		
 		// XXX This may need a promise or event handler.
 		app.FileManager.enableFileInput(this.audio.fileLoaded.bind(this.audio));
+		window.addEventListener(app.FileManager.loadStarted, this.startLoading.bind(this));
+		window.addEventListener(app.FileManager.loadCompleted, this.endLoading.bind(this));
+
 		
 		// Sets up the canvas on the screen.
 		// TODO allow this canvas to be existent.		
@@ -80,20 +85,70 @@ app.Audiobytes =
 		this.controller = new app.Controller();
 		this.controller.init( this.player );
 		
+		this.gradient = this.ctx.createLinearGradient(0,this.ctx.canvas.height,0,0);
+		this.gradient.addColorStop(0,'black');
+		this.gradient.addColorStop(0.5,'red');
+		
 		//this.update( );
     }, 
+	
+	startGame : function()
+	{
+		this.update();
+	},
     
     update : function( )
     {
-		console.log(this);
-        // Update stuff
-        
-        // Draw Stuff
-		
-		this.ctx.clearRect(0, 0, this.ctx.width, this.ctx.height);
-		this.player.draw();
-		
 		window.requestAnimFrame( this.update.bind(this) );
+
+        // Update stuff
+        this.audio.processAudio();
+		
+        // Draw Stuff
+		this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+		this.audio.draw(this.ctx, this.gradient);
+	//	this.player.draw();
+		
     },
 	
+	// Loading feedback.
+	// =======================================
+	startLoading : function(e)
+	{
+		this.loading = true;
+		this.loadAnim( "" );
+	},
+	
+	loadAnim : function( period )
+	{
+		if(!this.loading)
+		{
+			return;
+		}
+		
+		this.ctx.fillRect(0,0,this.ctx.canvas.width,this.ctx.canvas.height);
+		
+		this.ctx.save();
+		
+		this.ctx.fillStyle ="blue";
+		this.ctx.moveTo(0,0);
+		this.ctx.font = '25pt Calibri';
+		this.ctx.fillText("Loading"+ period, 0, 25);
+		
+		this.ctx.restore();
+				
+		period = period.length == 3 ? "" : period + "."; 			
+
+		window.setTimeout(this.loadAnim.bind(this, period), 500);
+	},
+	
+	endLoading : function()
+	{
+		this.loading = false;
+		this.ctx.fillRect(0,0,this.ctx.canvas.width,this.ctx.canvas.height);
+		
+		this.startGame();
+	}
+	// =======================================
+
 }

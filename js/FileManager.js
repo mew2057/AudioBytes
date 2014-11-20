@@ -22,9 +22,12 @@ app.FileManager = function()
 			alert("File API is not supported by your browser!");
 		}
 		
-		// Cache this so we don't need to invoke this again.
-		this.fileBtn = $("#fileBtn");
+		this.loadStarted = 'loading';
+		this.loadCompleted = 'loadCompleted';
 		
+		this.loadStartEvent = new Event(this.loadStarted);
+		this.loadCompleteEvent = new Event(this.loadCompleted);
+				
 		// The fileReader.
 		this.fileReader = new FileReader();		
 		this.fileReader.onloadend = this.loadComplete.bind(this);
@@ -60,6 +63,9 @@ app.FileManager = function()
 		fileSelect : function(e)
 		{
 			this.disableFileInput();	
+			
+			window.dispatchEvent(this.loadStartEvent);
+			
 			// TODO make this more generic, but for now this will do.
 			// E.G. > 1 file.
 			this.fileReader.readAsArrayBuffer(e.target.files[0]);

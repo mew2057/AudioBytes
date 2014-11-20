@@ -13,7 +13,7 @@
 var app = app || {};
 
 // TODO find better solution!
-FFT_SIZE = 1024;
+var FFT_SIZE = 1024;
 
 app.Audio = function()
 {
@@ -22,16 +22,16 @@ app.Audio = function()
 	
 	// Creates the gain node.
 	this.gainNode = this.audioContext.createGain();
-	this.gainNode.value = .5;
+	this.gainNode.value = .25;
 	
 	// Create an analyzer and set the FFTs.
 	this.analyzer = this.audioContext.createAnalyser();
 	this.analyzer.fftSize = FFT_SIZE;
 	
-	/*
-	// Connect the nodes in a meaningful manner.
-	this.audioContext.connect(this.gainNode);
-	this.audioContext.connect(this.analyzer);*/
+	// A buffer for holding audio data.
+	this.audioScratch = new Uint8Array(this.analyzer.frequencyBinCount);
+	this.domainScratch = new Uint8Array(this.analyzer.fftSize);
+
 }
 
 app.Audio.prototype = 
@@ -48,13 +48,14 @@ app.Audio.prototype =
 	 */
 	fileLoaded : function( result )
 	{
-		console.log("result");
 		// TODO  make playback
 		this.audioContext.decodeAudioData( result, this.startSong.bind(this), this.loadError );
 	},
 	
 	startSong : function (buffer)
 	{
+		window.dispatchEvent(app.FileManager.loadCompleteEvent);
+		
 		// Stops any audio that is currently playing.
 		if(this.audioSource)
 		{
@@ -66,7 +67,7 @@ app.Audio.prototype =
 		this.audioSource.buffer = buffer;
 		
 		// MAGIC!
-		//this.audioSource.connect(this.audioAnalyzer);    
+		this.audioSource.connect(this.analyzer);    
 		//this.audioAnalyzer.connect(this.scriptProcessor);
 		
 		// Connect the "stereo" to the volume dial.
@@ -75,11 +76,45 @@ app.Audio.prototype =
 		// Connect the "speakers" to the volume control.
 		this.gainNode.connect(this.audioContext.destination);
 
+		// TODO make this user specified.
 		// Start the song and change the drawing function.
 		this.audioSource.start();
 		
 		// TODO find a better solution for this.
 		width = 0;
+	},
+	
+	processAudio : function()
+	{
+		this.analyzer.getByteFrequencyData(this.audioScratch);		
+		this.analyzer.getByteTimeDomainData(this.domainScratch)
+	},
+	
+	draw : function( ctx, gradient )
+	{		
+		ctx.save();
+		ctx.fillStyle = gradient;
+		
+
+		for (var bin = 0,renderPos = 2; bin < this.audioScratch.length; ++bin, renderPos += 2)
+		{
+			ctx.fillRect(renderPos, ctx.canvas.height, 1, -this.audioScratch[bin]);
+		}
+		
+		var origin = ctx.canvas.height / 2;
+		ctx.fillStyle = "blue";
+		ctx.beginPath();
+
+		ctx.moveTo(0,origin);
+		for (var bin = 0; bin < this.domainScratch.length; ++bin)
+		{
+			ctx.lineTo(bin, (origin - 127) +this.domainScratch[bin] );
+		}
+		ctx.stroke();
+
+		ctx.restore();
 	}
+	
+	
 
 }
