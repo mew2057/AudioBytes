@@ -22,11 +22,15 @@ app.Audio = function()
 	
 	// Creates the gain node.
 	this.gainNode = this.audioContext.createGain();
-	this.gainNode.value = .25;
+	this.gainNode.gain.value = .1;
 	
 	// Create an analyzer and set the FFTs.
 	this.analyzer = this.audioContext.createAnalyser();
 	this.analyzer.fftSize = FFT_SIZE;
+	
+	// Creates a convolver node, this will be used to filter the audio.
+	this.convolver = this.audioContext.createConvolver();
+
 	
 	// A buffer for holding audio data.
 	this.audioScratch = new Uint8Array(this.analyzer.frequencyBinCount);
@@ -68,10 +72,9 @@ app.Audio.prototype =
 		
 		// MAGIC!
 		this.audioSource.connect(this.analyzer);    
-		//this.audioAnalyzer.connect(this.scriptProcessor);
 		
 		// Connect the "stereo" to the volume dial.
-		this.audioSource.connect(this.gainNode);
+		this.analyzer.connect(this.gainNode);
 		
 		// Connect the "speakers" to the volume control.
 		this.gainNode.connect(this.audioContext.destination);
