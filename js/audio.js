@@ -9,7 +9,8 @@
    
    Date Modified: 9/13/2014
    ------------ */
-   
+var OfflineAudioContext = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+
 var app = app || {};
 
 // TODO find better solution!
@@ -18,7 +19,12 @@ var FFT_SIZE = 1024;
 app.Audio = function()
 {
 	// CrossBrowser
-	this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+	this.audioContext = new (window.AudioContext || window.webkitAudioContext)();	
+	
+	this.unfilteredBuffer;
+	// Specifies the offline audio context which will do the lions share of the analysis work.
+	// Not sure how this all works right now.
+	
 	
 	// Creates the gain node.
 	this.gainNode = this.audioContext.createGain();
@@ -53,11 +59,47 @@ app.Audio.prototype =
 	fileLoaded : function( result )
 	{
 		// TODO  make playback
-		this.audioContext.decodeAudioData( result, this.startSong.bind(this), this.loadError );
+		this.audioContext.decodeAudioData( result, this.processSong.bind(this), this.loadError );
 	},
 	
-	startSong : function (buffer)
+	// This looks like it processes the song pretty much wholesale.
+	processSong : function( buffer )
+	{	
+		// Cache the unfiltered buffer for sound card rendered audio.
+		this.unfilteredBuffer = buffer;
+		
+		// Create a fresh context and source for this song.
+		this.offlineContext = new OfflineAudioContext(1, buffer.length, buffer.sampleRate);
+		this.offlineContext.oncomplete = this.startSong.bind(this);
+
+		this.offlineSource  = this.offlineContext.createBufferSource();
+		this.offlineSource.buffer = buffer;
+		
+		// Performs analysis.
+		var offlineAnalyzer = this.offlineContext.createAnalyser();
+		offlineAnalyzer.fftSize = FFT_SIZE;
+		
+		this.offlineSource.connect(offlineAnalyzer);		
+		
+		// TODO tweak sample buffer!
+		// This is pretty high fidelity (highest) and it loads a 4 minute song in no time, I think this should do nicely.
+		var scriptNode = this.offlineContext.createScriptProcessor(256, 1, 1);
+		scriptNode.onaudioprocess = this.preProcessAudio.bind(this);
+		offlineAnalyzer.connect(scriptNode);
+
+		scriptNode.connect(this.offlineContext.destination);
+		this.offlineSource.start();	
+		this.offlineContext.startRendering();
+	},
+	
+	preProcessAudio : function (e)
 	{
+		console.log(e.inputBuffer);
+	},
+	
+	startSong : function (event)
+	{
+		console.log("made it");
 		window.dispatchEvent(app.FileManager.loadCompleteEvent);
 		
 		// Stops any audio that is currently playing.
@@ -65,10 +107,12 @@ app.Audio.prototype =
 		{
 			this.audioSource.noteOff(0);
 		}
+		
+		console.log(event);
 
 		// create a new audio buffer for the song.
 		this.audioSource = this.audioContext.createBufferSource();
-		this.audioSource.buffer = buffer;
+		this.audioSource.buffer = this.unfilteredBuffer;
 		
 		// MAGIC!
 		this.audioSource.connect(this.analyzer);    
@@ -90,7 +134,7 @@ app.Audio.prototype =
 	processAudio : function()
 	{
 		this.analyzer.getByteFrequencyData(this.audioScratch);		
-		this.analyzer.getByteTimeDomainData(this.domainScratch)
+		this.analyzer.getByteTimeDomainData(this.domainScratch);
 	},
 	
 	draw : function( ctx, gradient )
