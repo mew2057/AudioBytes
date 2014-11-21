@@ -94,7 +94,16 @@ app.Audio.prototype =
 	
 	preProcessAudio : function (e)
 	{
-		console.log(e.inputBuffer);
+		// TODO robustify this.
+		var buffer = e.inputBuffer.getChannelData(0);
+
+		for (var sample = 0; sample < buffer.length; ++sample) 
+		{
+			// The PCM for the data.
+			// TODO make meaningful for beat detection.
+			console.log(buffer[sample]);
+		}
+
 	},
 	
 	startSong : function (event)
