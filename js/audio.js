@@ -34,9 +34,12 @@ app.Audio = function()
 	this.analyzer = this.audioContext.createAnalyser();
 	this.analyzer.fftSize = FFT_SIZE;
 	
+	this.offlineAnalyzer = this.audioContext.createAnalyser();
+	this.offlineAnalyzer.fftSize = FFT_SIZE;
+	
 	// Creates a convolver node, this will be used to filter the audio.
 	this.convolver = this.audioContext.createConvolver();
-
+this.samples = 0;
 	
 	// A buffer for holding audio data.
 	this.audioScratch = new Uint8Array(this.analyzer.frequencyBinCount);
@@ -75,40 +78,53 @@ app.Audio.prototype =
 		this.offlineSource  = this.offlineContext.createBufferSource();
 		this.offlineSource.buffer = buffer;
 		
+		
+		// XXX this doesn't work consistently in offline mode.
+		/*
 		// Performs analysis.
-		var offlineAnalyzer = this.offlineContext.createAnalyser();
-		offlineAnalyzer.fftSize = FFT_SIZE;
+		this.offlineAnalyzer = this.offlineContext.createAnalyser();
+		this.offlineAnalyzer.fftSize = FFT_SIZE;
 		
-		this.offlineSource.connect(offlineAnalyzer);		
-		
+		this.offlineSource.connect(this.offlineAnalyzer);	
+
 		// TODO tweak sample buffer!
 		// This is pretty high fidelity (highest) and it loads a 4 minute song in no time, I think this should do nicely.
-		var scriptNode = this.offlineContext.createScriptProcessor(256, 1, 1);
+		var scriptNode = this.offlineContext.createScriptProcessor(16384, buffer.numberOfChannels, buffer.numberOfChannels);
 		scriptNode.onaudioprocess = this.preProcessAudio.bind(this);
-		offlineAnalyzer.connect(scriptNode);
-
-		scriptNode.connect(this.offlineContext.destination);
+		this.offlineAnalyzer.connect(scriptNode);
+		*/
+		
+		this.offlineSource.connect(this.offlineContext.destination);
 		this.offlineSource.start();	
 		this.offlineContext.startRendering();
 	},
 	
 	preProcessAudio : function (e)
 	{
-		// TODO robustify this.
-		var buffer = e.inputBuffer.getChannelData(0);
-
-		for (var sample = 0; sample < buffer.length; ++sample) 
+		// This hook in doesn't work!
+		for(var channel = 0; channel < e.inputBuffer.numberOfChannels; ++channel)
 		{
-			// The PCM for the data.
-			// TODO make meaningful for beat detection.
-			console.log(buffer[sample]);
-		}
+			var buffer = e.inputBuffer.getChannelData(channel);
+			var energy = 0;
+			var outputData = e.outputBuffer.getChannelData(channel);
 
+			for (var sample = 0; sample < buffer.length; ++sample) 
+			{
+				// The PCM for the data.
+				// TODO make meaningful for beat detection.
+				energy += buffer[sample];
+				outputData[sample] = buffer[sample];
+			}
+			avgEnergy = energy/buffer.length;
+			
+			if(channel ==0 )
+				this.samples += buffer.length;
+		}
 	},
 	
 	startSong : function (event)
 	{
-		console.log("made it");
+		console.log(this.samples);
 		window.dispatchEvent(app.FileManager.loadCompleteEvent);
 		
 		// Stops any audio that is currently playing.
@@ -117,11 +133,11 @@ app.Audio.prototype =
 			this.audioSource.noteOff(0);
 		}
 		
-		console.log(event);
+		console.log(this.unfilteredBuffer);
 
 		// create a new audio buffer for the song.
 		this.audioSource = this.audioContext.createBufferSource();
-		this.audioSource.buffer = this.unfilteredBuffer;
+		this.audioSource.buffer = event.renderedBuffer;//this.unfilteredBuffer;//
 		
 		// MAGIC!
 		this.audioSource.connect(this.analyzer);    
